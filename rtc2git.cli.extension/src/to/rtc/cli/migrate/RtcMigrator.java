@@ -1,42 +1,44 @@
 package to.rtc.cli.migrate;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import to.rtc.cli.migrate.command.AcceptCommandDelegate;
-import to.rtc.cli.migrate.command.LoadCommandDelegate;
-import to.rtc.cli.migrate.util.Files;
-
 import com.ibm.team.filesystem.cli.core.Constants;
 import com.ibm.team.filesystem.cli.core.subcommands.IScmClientConfiguration;
 import com.ibm.team.filesystem.rcp.core.internal.changelog.IChangeLogOutput;
 import com.ibm.team.rtc.cli.infrastructure.internal.core.CLIClientException;
 
+import to.rtc.cli.migrate.command.AcceptCommandDelegate;
+import to.rtc.cli.migrate.command.LoadCommandDelegate;
+import to.rtc.cli.migrate.util.Files;
+
 public class RtcMigrator {
 
 	/**
-    *
-    */
+	*
+	*/
 	private static final int ACCEPTS_BEFORE_LOCAL_HISTORY_CLEAN = 1000;
 	protected final IChangeLogOutput output;
 	private final IScmClientConfiguration config;
 	private final String workspace;
 	private final Migrator migrator;
-	private static final Set<String> initiallyLoadedComponents = new HashSet<String>();
+	private final Set<String> initiallyLoadedComponents;
 	private File sandboxDirectory;
 	private final boolean isUpdateMigration;
 
 	public RtcMigrator(IChangeLogOutput output, IScmClientConfiguration config, String workspace, Migrator migrator,
-			File sandboxDirectory, boolean isUpdateMigration) {
+			File sandboxDirectory, Collection<String> initiallyLoadedComponents, boolean isUpdateMigration) {
 		this.output = output;
 		this.config = config;
 		this.workspace = workspace;
 		this.migrator = migrator;
 		this.sandboxDirectory = sandboxDirectory;
+		this.initiallyLoadedComponents = new HashSet<String>(initiallyLoadedComponents);
 		this.isUpdateMigration = isUpdateMigration;
 	}
 
@@ -136,7 +138,7 @@ public class RtcMigrator {
 				initiallyLoadedComponents.add(changeSet.getComponent());
 			} catch (CLIClientException e) { // ignore
 				throw new RuntimeException("Not a valid sandbox. Please run [scm load " + workspace
-						+ "] before [scm migrate-to-git] command");
+						+ "] before [scm migrate-to-git] command", e);
 			}
 		}
 	}

@@ -18,6 +18,7 @@ import com.ibm.team.filesystem.cli.core.util.RepoUtil;
 import com.ibm.team.filesystem.cli.core.util.RepoUtil.ItemType;
 import com.ibm.team.filesystem.cli.core.util.SubcommandUtil;
 import com.ibm.team.filesystem.client.FileSystemException;
+import com.ibm.team.filesystem.client.internal.PathLocation;
 import com.ibm.team.filesystem.client.internal.snapshot.FlowType;
 import com.ibm.team.filesystem.client.internal.snapshot.SnapshotId;
 import com.ibm.team.filesystem.client.internal.snapshot.SnapshotSyncReport;
@@ -94,11 +95,11 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 				output.writeLine("***** IS UPDATE MIGRATION *****");
 			}
 
-			final ScmCommandLineArgument sourceWsOption = ScmCommandLineArgument.create(
-					subargs.getOptionValue(MigrateToOptions.OPT_SRC_WS), config);
+			final ScmCommandLineArgument sourceWsOption = ScmCommandLineArgument
+					.create(subargs.getOptionValue(MigrateToOptions.OPT_SRC_WS), config);
 			SubcommandUtil.validateArgument(sourceWsOption, ItemType.WORKSPACE);
-			final ScmCommandLineArgument destinationWsOption = ScmCommandLineArgument.create(
-					subargs.getOptionValue(MigrateToOptions.OPT_DEST_WS), config);
+			final ScmCommandLineArgument destinationWsOption = ScmCommandLineArgument
+					.create(subargs.getOptionValue(MigrateToOptions.OPT_DEST_WS), config);
 			SubcommandUtil.validateArgument(destinationWsOption, ItemType.WORKSPACE);
 
 			// Initialize connection to RTC
@@ -145,8 +146,12 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 			Migrator migrator = getMigrator();
 			migrator.init(sandboxDirectory);
 
+			Map<String, String> destinationWsComponents = RepoUtil.getComponentsInSandbox(
+					destinationWs.getItemId().getUuidValue(), new PathLocation(sandboxDirectory.getAbsolutePath()),
+					client, config);
+
 			RtcMigrator rtcMigrator = new RtcMigrator(output, config, destinationWsOption.getStringValue(), migrator,
-					sandboxDirectory, isUpdateMigration);
+					sandboxDirectory, destinationWsComponents.values(), isUpdateMigration);
 			boolean isFirstTag = true;
 			int numberOfTags = tagList.size();
 			int tagCounter = 0;
@@ -219,8 +224,8 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 			IWorkspace sourceWs) {
 		RtcTagList tagList = new RtcTagList(output);
 		try {
-			IWorkspaceConnection sourceWsConnection = SCMPlatform.getWorkspaceManager(repo).getWorkspaceConnection(
-					sourceWs, getMonitor());
+			IWorkspaceConnection sourceWsConnection = SCMPlatform.getWorkspaceManager(repo)
+					.getWorkspaceConnection(sourceWs, getMonitor());
 
 			IWorkspaceHandle sourceStreamHandle = (IWorkspaceHandle) (sourceWsConnection.getFlowTable()
 					.getCurrentAcceptFlow().getFlowNode());
@@ -241,8 +246,8 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 					BaselineHistoryEntryDTO baselineEntry = (BaselineHistoryEntryDTO) obj;
 					BaselineDTO baseline = baselineEntry.getBaseline();
 					long creationDate = baseline.getCreationDate();
-					RtcTag tag = new RtcTag(baseline.getItemId()).setCreationDate(creationDate).setOriginalName(
-							baseline.getName());
+					RtcTag tag = new RtcTag(baseline.getItemId()).setCreationDate(creationDate)
+							.setOriginalName(baseline.getName());
 					tag = tagList.add(tag);
 				}
 			}
@@ -259,8 +264,8 @@ public abstract class MigrateTo extends AbstractSubcommand implements ISubcomman
 
 		SnapshotSyncReport syncReport;
 		try {
-			IWorkspaceConnection sourceWsConnection = SCMPlatform.getWorkspaceManager(repo).getWorkspaceConnection(
-					sourceWs, getMonitor());
+			IWorkspaceConnection sourceWsConnection = SCMPlatform.getWorkspaceManager(repo)
+					.getWorkspaceConnection(sourceWs, getMonitor());
 
 			IWorkspaceHandle sourceStreamHandle = (IWorkspaceHandle) (sourceWsConnection.getFlowTable()
 					.getCurrentAcceptFlow().getFlowNode());
